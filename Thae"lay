@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For You ❤️</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    background: radial-gradient(circle, #1a1a2e, #0f0f1a);
+    touch-action: none; /* ဖုန်းမှာ ပွတ်ဆွဲရင် screen မရွေ့အောင် */
+}
+
+#text {
+    position: absolute;
+    bottom: 40px;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-family: sans-serif;
+    font-size: 20px;
+    text-shadow: 0 0 15px rgba(255,255,255,0.7);
+    z-index: 10;
+    pointer-events: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="text">မင်းအတွက်ပဲ ❤️</div>
+
+<script>
+const { Engine, Render, Runner, Bodies, Composite, Events, Mouse, MouseConstraint } = Matter;
+
+const engine = Engine.create();
+
+const render = Render.create({
+    element: document.body,
+    engine: engine,
+    options: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        wireframes: false,
+        background: 'transparent'
+    }
+});
+
+// ✅ သင်ပေးထားတဲ့ ပုံ Link များကို Direct Link အဖြစ် ပြောင်းထည့်ထားပါတယ်
+const images = [
+ 'https://i.ibb.co/XfR0p18/1000010723.jpg',
+ 'https://i.ibb.co/3Wf0Gv9/1000010704.jpg',
+ 'https://i.ibb.co/r76P2xX/1000010706.jpg',
+ 'https://i.ibb.co/Vvz8jWk/1000010701.jpg',
+ 'https://i.ibb.co/ZJ9y6L7/1000010700.jpg'
+];
+// နံရံများ (Walls)
+Composite.add(engine.world, [
+    Bodies.rectangle(window.innerWidth/2, window.innerHeight+40, window.innerWidth, 80, {isStatic:true}),
+    Bodies.rectangle(-40, window.innerHeight/2, 80, window.innerHeight, {isStatic:true}),
+    Bodies.rectangle(window.innerWidth+40, window.innerHeight/2, 80, window.innerHeight, {isStatic:true}),
+    Bodies.rectangle(window.innerWidth/2, -40, window.innerWidth, 80, {isStatic:true})
+]);
+
+// ပုံလေးများ ဖန်တီးခြင်း
+let circles = [];
+for (let i = 0; i < 12; i++) {
+    let r = Math.random() * 20 + 50; // ပုံအရွယ်အစား
+
+    let body = Bodies.circle(
+        Math.random() * window.innerWidth,
+        Math.random() * -1000, // အပေါ်ကနေ ကျလာအောင်
+        r,
+        {
+            restitution: 0.6,
+            frictionAir: 0.02
+        }
+    );
+
+    body.img = new Image();
+    body.img.src = images[i % images.length];
+
+    circles.push(body);
+}
+
+Composite.add(engine.world, circles);
+
+// လက်နဲ့ ထိလို့ရအောင် Mouse Constraint ထည့်ခြင်း
+const mouse = Mouse.create(render.canvas);
+const mouseConstraint = MouseConstraint.create(engine, {
+    mouse: mouse,
+    constraint: { stiffness: 0.2, render: { visible: false } }
+});
+Composite.add(engine.world, mouseConstraint);
+
+// ပုံများကို အဝိုင်းပုံစံညှပ်ပြီး ဆွဲခြင်း
+Events.on(render, "afterRender", () => {
+    const ctx = render.context;
+    circles.forEach(c => {
+        if (!c.img.complete) return;
+        let x = c.position.x;
+        let y = c.position.y;
+        let r = c.circleRadius;
+        let angle = c.angle;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI*2);
+        ctx.clip();
+        ctx.drawImage(c.img, -r, -r, r*2, r*2);
+        ctx.restore();
+
+        // အဖြူရောင် အနားသတ်လိုင်းလေး
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI*2);
+        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    });
+});
+
+Render.run(render);
+Runner.run(Runner.create(), engine);
+
+// စာသားပြောင်းလဲခြင်း
+const text = document.getElementById("text");
+const msgs = [
+ "မင်းအတွက်ပဲ ❤️",
+ "တိတ်တိတ်လေးချစ်နေတယ် 💕",
+ "မင်းအပြုံးက ငါ့အလင်းပါ ✨",
+ "ငါ့နှလုံးသားထဲမှာ မင်းပဲရှိတယ် 💖",
+ "မပိုင်ဆိုင်ရလည်းချစ်တယ်😍"
+];
+
+document.body.addEventListener("mousedown", ()=>{
+    text.style.opacity = 0;
+    setTimeout(() => {
+        text.innerText = msgs[Math.floor(Math.random()*msgs.length)];
+        text.style.opacity = 1;
+    }, 200);
+});
+</script>
+
+</body>
+</html>
